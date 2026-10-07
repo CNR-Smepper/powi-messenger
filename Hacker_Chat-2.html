@@ -1,0 +1,3568 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POWI | Privater Messenger</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111827;
+      --panel-2: #0f172a;
+      --panel-3: #182235;
+      --border: #243247;
+      --text: #f3f7fb;
+      --text-soft: #9aa7b8;
+      --accent: #2563eb;
+      --accent-blue: #38bdf8;
+      --accent-soft: #172554;
+      --danger: #ef4444;
+      --danger-soft: #3a1118;
+      --incoming: #1f2937;
+      --outgoing: #1d4ed8;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      scrollbar-color: #244348 #030607;
+      scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: #030607;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: #244348;
+      border: 2px solid #030607;
+      border-radius: 8px;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      background: var(--panel);
+      border: none;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    body.launch-active .app,
+    body.launch-active .toast {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: #0d1524;
+      min-width: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .search-box {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text-soft);
+      font-size: 0.95rem;
+      user-select: none;
+    }
+
+    .contact-list {
+      padding: 8px;
+      overflow: auto;
+    }
+
+    .contact-item {
+      display: grid;
+      grid-template-columns: 48px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 14px;
+      transition: 0.15s ease;
+      min-width: 0;
+      border: 1px solid transparent;
+    }
+
+    .contact-item.clickable {
+      cursor: pointer;
+    }
+
+    .contact-item.clickable:hover {
+      background: #162235;
+    }
+
+    .contact-item.active {
+      background: #162b52;
+      border-color: #254d8f;
+    }
+
+    .contact-item.disabled {
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
+    .contact-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.94rem;
+      color: #fff;
+      background: #5d6b7f;
+      flex: 0 0 auto;
+    }
+
+    .contact-avatar.is-accent {
+      background: var(--accent);
+    }
+
+    .contact-avatar.is-danger {
+      background: var(--danger);
+    }
+
+    .contact-avatar.is-muted {
+      background: #5d6b7f;
+    }
+
+    .contact-content {
+      min-width: 0;
+    }
+
+    .contact-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .contact-name {
+      font-weight: 600;
+      font-size: 0.96rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-time {
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .contact-preview {
+      color: var(--text-soft);
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-unread {
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0 6px;
+      margin-left: 4px;
+    }
+
+    .chat {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .chat-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .chat-avatar.accent {
+      background: var(--accent);
+    }
+
+    .chat-avatar.danger {
+      background: var(--danger);
+    }
+
+    .chat-avatar.muted {
+      background: #5d6b7f;
+    }
+
+    .chat-header-main {
+      min-width: 0;
+    }
+
+    .chat-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 3px;
+    }
+
+    .chat-status {
+      color: var(--text-soft);
+      font-size: 0.85rem;
+    }
+
+    .messages {
+      background: var(--panel-2);
+      overflow: auto;
+      padding: 22px 24px;
+      min-height: 0;
+    }
+
+    .date-label {
+      width: fit-content;
+      margin: 0 auto 20px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #1b2638;
+      color: var(--text-soft);
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+    }
+
+    .message-row {
+      display: flex;
+      margin-bottom: 16px;
+      animation: fadeIn 180ms ease;
+    }
+
+    .message-row.incoming {
+      justify-content: flex-start;
+    }
+
+    .message-row.outgoing {
+      justify-content: flex-end;
+    }
+
+    .message-wrap {
+      max-width: min(76%, 740px);
+    }
+
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.55;
+      font-size: 0.98rem;
+      border: 1px solid rgba(134, 160, 157, 0.18);
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .incoming .bubble {
+      background: var(--incoming);
+      border-top-left-radius: 6px;
+    }
+
+    .outgoing .bubble {
+      background: var(--outgoing);
+      border-top-right-radius: 6px;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 0 4px;
+      color: var(--text-soft);
+      font-size: 0.76rem;
+    }
+
+    .incoming .message-meta {
+      justify-content: flex-start;
+    }
+
+    .outgoing .message-meta {
+      justify-content: flex-end;
+    }
+
+    .message-ticks {
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      transform: translateY(-1px);
+    }
+
+    .message-ticks.delivered {
+      color: var(--text-soft);
+    }
+
+    .message-ticks.read {
+      color: #16a34a;
+    }
+
+    .bubble a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .typing-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: #1b2638;
+      color: var(--text-soft);
+      font-size: 0.88rem;
+      border: 1px solid var(--border);
+    }
+
+    .typing-dots {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1s infinite ease-in-out;
+      opacity: 0.35;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .card {
+      background: #151f2f;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .card-text {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .card-link {
+      width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #172554;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid #26467d;
+    }
+
+    .password-value {
+      display: inline-block;
+      width: fit-content;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #020617;
+      color: #dbeafe;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.95rem;
+      letter-spacing: 0;
+    }
+
+    .accounts-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .account-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #111c2d;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .account-name {
+      font-weight: 700;
+      font-size: 0.94rem;
+    }
+
+    .account-lines {
+      display: grid;
+      gap: 4px;
+      font-size: 0.88rem;
+      color: var(--text-soft);
+    }
+
+    .account-label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .system-note {
+      background: #1d1a09;
+      border: 1px solid #6c611d;
+      color: #e8dd8a;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .danger-note {
+      background: var(--danger-soft);
+      border: 1px solid #6b1721;
+      color: #ffb4bd;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .composer {
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      padding: 12px 16px 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .composer-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .composer-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .composer-note {
+      font-size: 0.82rem;
+      color: var(--text-soft);
+    }
+
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #151f2f;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font: inherit;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .quick-btn:hover:not(:disabled) {
+      border-color: #345f9f;
+      background: #1b2f51;
+    }
+
+    .quick-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .composer-bottom {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .message-input {
+      width: 100%;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 14px;
+      font: inherit;
+      font-size: 0.94rem;
+      background: #0b1220;
+      color: var(--text);
+      outline: none;
+    }
+
+    .message-input:focus {
+      border-color: var(--accent);
+      background: #111c2d;
+    }
+
+    .message-input:disabled {
+      background: #111827;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .send-btn {
+      appearance: none;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      height: 48px;
+      min-width: 130px;
+      padding: 0 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      color: #fff;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      filter: brightness(1.04);
+    }
+
+    .send-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: #111827;
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+      font-size: 0.92rem;
+      max-width: 320px;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 50;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .launch-screen {
+      --text: #f2f2f2;
+      --text-soft: #929292;
+      --accent: #eeeeee;
+      --border: #303030;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      background: #000;
+      color: #f2f2f2;
+      font-family: "Cascadia Mono", "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      overflow: hidden;
+    }
+
+    .launch-screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 100% 4px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .launch-screen.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 700ms ease;
+    }
+
+    .launch-panel {
+      position: relative;
+      z-index: 1;
+      display: none;
+      width: min(920px, calc(100vw - 32px));
+      min-height: min(560px, calc(100dvh - 32px));
+      align-items: center;
+      justify-content: center;
+    }
+
+    .launch-panel.active {
+      display: flex;
+    }
+
+    .consent-panel,
+    .warning-panel {
+      min-height: 0;
+      max-height: calc(100dvh - 40px);
+      overflow-y: auto;
+      padding: 4px;
+      justify-content: flex-start;
+    }
+
+    .consent-panel .terminal-window,
+    .warning-panel .terminal-window,
+    .consent-lead { flex-shrink: 0; }
+
+    .warning-panel.active,
+    .login-panel.active {
+      animation: sceneEnter 600ms ease both;
+    }
+
+    .launch-screen * {
+      scrollbar-color: #444 #080808;
+    }
+
+    .launch-screen *::-webkit-scrollbar-track { background: #080808; }
+    .launch-screen *::-webkit-scrollbar-thumb { background: #444; border-color: #080808; }
+
+    .launch-button:disabled { opacity: .55; cursor: default; }
+
+    @keyframes sceneEnter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .intro-copy {
+      width: min(760px, 92vw);
+      display: grid;
+      gap: 26px;
+      text-align: center;
+      font-size: 1.4rem;
+      line-height: 1.6;
+      color: #f2f2f2;
+    }
+
+    .intro-copy.is-fading {
+      animation: sinkIntoDark 1800ms ease forwards;
+    }
+
+    .type-line {
+      min-height: 1.6em;
+      white-space: pre-wrap;
+    }
+
+    .type-line.with-cursor::after,
+    .terminal-cursor::after {
+      content: "";
+      display: inline-block;
+      width: 0.65ch;
+      height: 1em;
+      margin-left: 0.16ch;
+      background: currentColor;
+      transform: translateY(0.15em);
+      animation: cursorBlink 750ms steps(1) infinite;
+    }
+
+    .consent-panel,
+    .warning-panel,
+    .login-panel {
+      flex-direction: column;
+      gap: 22px;
+      text-align: left;
+    }
+
+    .consent-lead {
+      width: min(780px, 92vw);
+      min-height: 3.4em;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.55;
+      color: #999;
+    }
+
+    .terminal-window,
+    .login-box {
+      width: min(580px, 100%);
+      border: 1px solid #292929;
+      border-radius: 4px;
+      background: #0b0b0b;
+      box-shadow: none;
+    }
+
+    .terminal-window {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: 450ms ease;
+    }
+
+    .terminal-window.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .window-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #292929;
+      color: var(--text-soft);
+      font-size: 0.76rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      background: transparent;
+    }
+
+    .window-lights {
+      display: none;
+      gap: 6px;
+    }
+
+    .window-lights span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #25464a;
+    }
+
+    .window-body {
+      padding: 32px;
+      color: var(--text);
+      line-height: 1.65;
+      font-family: var(--font);
+    }
+
+    .window-body h1,
+    .window-body h2 {
+      margin: 0 0 20px;
+      font-size: 1.8rem;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+
+    .window-body p { color: #aaa; }
+
+    .storage-facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 26px 0;
+      padding: 20px 0;
+      border-top: 1px solid #292929;
+      border-bottom: 1px solid #292929;
+    }
+
+    .storage-facts strong { display: block; font-size: .94rem; font-weight: 500; }
+    .storage-facts span { display: block; margin-top: 4px; color: #888; font-size: .8rem; }
+    .window-body .launch-button { width: 100%; margin-top: 14px; }
+
+    .window-body p {
+      margin: 0 0 14px;
+    }
+
+    .window-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .launch-button {
+      appearance: none;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      background: #eee;
+      color: #111;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: 0;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .launch-button:hover,
+    .launch-button:focus-visible {
+      background: #fff;
+      border-color: #fff;
+      outline: 2px solid #777;
+      outline-offset: 4px;
+    }
+
+    .warning-panel .terminal-window {
+      border-color: #292929;
+    }
+
+    .warning-panel .window-body {
+      color: #eee;
+    }
+
+    .boot-panel {
+      width: 100vw;
+      height: 100dvh;
+      min-height: 100dvh;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .boot-terminal {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: #000;
+      color: #ddd;
+    }
+
+    .boot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 17px clamp(18px, 3vw, 42px);
+      border-bottom: 1px solid #222;
+      background: #000;
+      color: #ddd;
+      font-size: 0.78rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .boot-brand,
+    .boot-status,
+    .service-brand,
+    .login-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .powi-mark {
+      display: none;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      border: 1px solid #4ce0c0;
+      border-radius: 11px;
+      background: #0e3b39;
+      color: #effffb;
+      font: italic 800 1.5rem/1 var(--font);
+      box-shadow: 0 0 20px rgba(54, 217, 183, .13);
+    }
+
+    .boot-brand strong {
+      display: block;
+      font: italic 800 1.34rem/1 var(--font);
+      color: #fff;
+    }
+
+    .boot-brand small,
+    .boot-status small {
+      display: block;
+      margin-top: 4px;
+      color: #777;
+      font-size: .64rem;
+      text-transform: uppercase;
+    }
+
+    .status-light {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ddd;
+      box-shadow: none;
+      animation: pulse 1.6s infinite;
+    }
+
+    .boot-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      min-height: 0;
+    }
+
+    .boot-main {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .boot-main-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 25px clamp(18px, 3vw, 42px) 17px;
+      border-bottom: 1px solid #171717;
+    }
+
+    .boot-main-heading h2 {
+      margin: 0;
+      color: #eee;
+      font: 500 1.2rem/1.25 var(--font);
+    }
+
+    .boot-main-heading span {
+      color: #777;
+      font-size: .72rem;
+      white-space: nowrap;
+    }
+
+    .boot-output {
+      margin: 0;
+      padding: 20px clamp(18px, 3vw, 42px);
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      color: #999;
+      font-size: .78rem;
+      font-family: "Cascadia Mono", Consolas, monospace;
+    }
+
+    .boot-rail {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 26px 22px;
+      border-left: 1px solid #222;
+      background: #050505;
+      gap: 26px;
+    }
+
+    .rail-label {
+      display: block;
+      margin-bottom: 11px;
+      color: #777;
+      font-size: .7rem;
+      text-transform: uppercase;
+    }
+
+    .rail-title {
+      color: #eee;
+      font: 600 1.15rem/1.35 var(--font);
+    }
+
+    .rail-rule {
+      height: 1px;
+      background: #222;
+    }
+
+    .channel-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid #222;
+      color: #aaa;
+      font-size: .76rem;
+    }
+
+    .channel-row strong {
+      color: #eee;
+      font-weight: 500;
+    }
+
+    .channel-row strong.pending {
+      color: #666;
+    }
+
+    .signal-bars {
+      display: flex;
+      align-items: end;
+      height: 65px;
+      gap: 4px;
+      overflow: hidden;
+    }
+
+    .signal-bars span {
+      flex: 1;
+      height: 20%;
+      max-width: 8px;
+      background: #2dd4ad;
+      opacity: .65;
+      animation: signalDance 1.1s ease-in-out infinite alternate;
+      animation-delay: calc(var(--index) * -75ms);
+    }
+
+    .boot-progress {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px 20px;
+      padding: 16px clamp(18px, 3vw, 42px) 21px;
+      border-top: 1px solid #222;
+      background: #000;
+    }
+
+    .boot-progress-label {
+      color: #aaa;
+      font-size: .73rem;
+    }
+
+    .boot-percent {
+      color: #fff;
+      font: 700 1.25rem/1 var(--font);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .boot-track {
+      grid-column: 1 / -1;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 5px;
+      background: #222;
+    }
+
+    .boot-fill {
+      width: 0;
+      height: 100%;
+      background: #eee;
+      box-shadow: none;
+      transition: width 140ms linear;
+    }
+
+    .ascii-powi {
+      display: block;
+      margin-top: 18px;
+      color: #f7fffd;
+      font-style: italic;
+      transform: skewX(-10deg);
+      transform-origin: left center;
+      letter-spacing: 0;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
+    }
+
+    .logo-panel {
+      width: 100vw;
+      height: 100dvh;
+      min-height: 100dvh;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .powi-logo {
+      font-family: var(--font);
+      font-size: 9rem;
+      font-style: italic;
+      font-weight: 800;
+      letter-spacing: 0;
+      color: #fff;
+      clip-path: inset(0 100% 0 0);
+      text-shadow: none;
+    }
+
+    .powi-logo.revealed {
+      animation: revealLogo 1450ms cubic-bezier(.25, .8, .2, 1) forwards;
+    }
+
+    .logo-caption {
+      color: #888;
+      font-size: .8rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 650ms ease;
+    }
+
+    .logo-caption.visible {
+      opacity: 1;
+    }
+
+    .login-panel {
+      width: 100%;
+      min-height: 100dvh;
+      gap: 0;
+      flex-direction: row;
+      justify-content: center;
+      background: #000;
+      font-family: var(--font);
+    }
+
+    .login-scene {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      width: min(460px, calc(100vw - 40px));
+      min-height: 0;
+      border: none;
+      background: #000;
+      box-shadow: none;
+    }
+
+    .login-preview {
+      display: none;
+      grid-template-rows: auto 1fr auto;
+      min-height: 0;
+      border-right: 1px solid #20313b;
+      background: #0a111a;
+    }
+
+    .preview-top,
+    .preview-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 24px;
+      border-bottom: 1px solid #20313b;
+      color: #d7ece8;
+      font-size: .8rem;
+    }
+
+    .preview-bottom {
+      border-top: 1px solid #20313b;
+      border-bottom: none;
+      color: #718b8a;
+    }
+
+    .preview-messages {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 30px clamp(22px, 4vw, 55px);
+    }
+
+    .preview-message {
+      max-width: 85%;
+      padding: 14px 17px;
+      border: 1px solid #284147;
+      border-radius: 15px 15px 15px 5px;
+      background: #172530;
+      color: #d4e9e6;
+      line-height: 1.5;
+      font-size: .94rem;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: previewIn 600ms ease forwards;
+    }
+
+    .preview-message:nth-child(2) {
+      align-self: flex-end;
+      border-color: #215d63;
+      border-radius: 15px 15px 5px 15px;
+      background: #12363e;
+      animation-delay: 300ms;
+    }
+
+    .preview-message:nth-child(3) {
+      animation-delay: 700ms;
+    }
+
+    .preview-sender {
+      display: block;
+      margin-bottom: 5px;
+      color: #57dfbf;
+      font-size: .74rem;
+    }
+
+    .login-box {
+      width: auto;
+      padding: 28px;
+      display: grid;
+      align-content: center;
+      gap: 22px;
+      border: 0;
+      border-radius: 0;
+      background: #000;
+      box-shadow: none;
+    }
+
+    .login-brand {
+      font-size: 4.7rem;
+      font-weight: 800;
+      font-style: italic;
+      line-height: 0.9;
+      color: #fff;
+      letter-spacing: 0;
+    }
+
+    .login-subtitle {
+      color: var(--text-soft);
+      font-size: 0.92rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .login-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .login-label {
+      color: var(--text-soft);
+      font-size: 0.86rem;
+    }
+
+    .login-input {
+      width: 100%;
+      height: 50px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #090909;
+      color: var(--text);
+      font: inherit;
+      padding: 0 14px;
+      outline: none;
+    }
+
+    .login-input:focus {
+      border-color: var(--accent);
+    }
+
+    .login-meta {
+      color: #888;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes cursorBlink {
+      0%, 49% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes sinkIntoDark {
+      to {
+        opacity: 0;
+        filter: blur(3px);
+        transform: translateY(10px);
+      }
+    }
+
+    @keyframes revealLogo {
+      from {
+        clip-path: inset(0 100% 0 0);
+      }
+      to {
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    @keyframes signalDance {
+      0% { height: 12%; opacity: .4; }
+      100% { height: 85%; opacity: 1; }
+    }
+
+    @keyframes previewIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 80%, 100% {
+        transform: scale(0.85);
+        opacity: 0.35;
+      }
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .boot-grid {
+        grid-template-columns: minmax(0, 1fr) 190px;
+      }
+
+      .boot-rail {
+        padding: 22px 15px;
+      }
+
+      .login-scene {
+        grid-template-columns: 1fr;
+        min-height: 100dvh;
+        width: 100%;
+        border: 0;
+      }
+
+      .login-preview {
+        display: none;
+      }
+
+      .login-box {
+        width: min(520px, 100%);
+        margin: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .messages {
+        padding: 18px 16px;
+      }
+
+      .message-wrap {
+        max-width: 86%;
+      }
+
+      .composer-bottom {
+        grid-template-columns: 1fr;
+      }
+
+      .send-btn {
+        width: 100%;
+      }
+
+      .toast {
+        right: 14px;
+        left: 14px;
+        bottom: 14px;
+        max-width: none;
+      }
+    }
+    @media (max-width: 600px) {
+      .intro-copy { font-size: 1.05rem; gap: 22px; }
+      .window-body { padding: 24px; }
+      .window-body h1,
+      .window-body h2 { font-size: 1.5rem; }
+      .storage-facts { gap: 16px; }
+      .powi-logo { font-size: 5rem; }
+      .boot-output { font-size: .68rem; }
+      .boot-grid { grid-template-columns: 1fr; }
+      .boot-rail { display: none; }
+      .boot-status small,
+      .boot-main-heading span { display: none; }
+      .boot-header { padding: 13px 16px; }
+      .boot-main-heading { padding: 17px 16px; }
+      .boot-output { padding: 16px; }
+      .boot-progress { padding: 15px 16px 20px; }
+      .logo-caption { font-size: .66rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .launch-screen *, .launch-screen *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="launch-active">
+  <div class="launch-screen" id="launchScreen">
+    <section class="launch-panel intro-panel active" id="introPanel">
+      <div class="intro-copy" id="introCopy">
+        <div class="type-line" id="introLineOne"></div>
+        <div class="type-line" id="introLineTwo"></div>
+      </div>
+    </section>
+
+    <section class="launch-panel consent-panel" id="consentPanel">
+      <div class="consent-lead type-line" id="consentLead"></div>
+      <div class="terminal-window" id="cookieWindow" role="dialog" aria-labelledby="cookieTitle" aria-modal="true">
+        <div class="window-bar">
+          <span>POWI / Vor dem Start</span>
+          <div class="window-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+        <div class="window-body">
+          <h1 id="cookieTitle">Euer Fortschritt bleibt hier.</h1>
+          <p>POWI speichert Nachrichten und Rätselstatus lokal in eurem Browser. So könnt ihr die Seite neu laden und genau hier weiterspielen.</p>
+          <div class="storage-facts">
+            <div><strong>Nur auf diesem Gerät</strong><span>Wir können die Daten nicht sehen.</span></div>
+            <div><strong>4 Stunden gültig</strong><span>Danach beginnt das Spiel von vorn.</span></div>
+          </div>
+          <p>Für das Spiel ist dieser lokale Speicher nötig. Mit „Akzeptieren“ gebt ihr ihn frei.</p>
+          <button class="launch-button" id="acceptCookiesBtn" type="button">Akzeptieren</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="launch-panel warning-panel" id="warningPanel">
+      <div class="terminal-window is-visible">
+        <div class="window-bar">
+          <span>POWI / Spielhinweis</span>
+          <div class="window-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+        <div class="window-body">
+          <h2>Ab jetzt gehört alles zum Spiel.</h2>
+          <p>Hinweis vor dem Start: Alle später gezeigten Störungen, Verbindungsabbrüche, Systemmeldungen und Sicherheitswarnungen sind Inszenierung.</p>
+          <p>Sie gehören zur Atmosphäre des Escape Games. Es wird kein echtes System angegriffen, keine echte Verbindung überwacht und keine echte Sicherheitswarnung ausgelöst.</p>
+          <button class="launch-button" id="startSequenceBtn" type="button">Verstanden. Starten.</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="launch-panel boot-panel" id="bootPanel">
+      <div class="boot-terminal">
+        <div class="boot-header">
+          <div class="boot-brand">
+            <span class="powi-mark" aria-hidden="true">P</span>
+            <span><strong>POWI</strong><small>Private Messenger / v 2.4</small></span>
+          </div>
+          <div class="boot-status"><span class="status-light" aria-hidden="true"></span><span>Kanalaufbau<small>Lokale Sitzung</small></span></div>
+        </div>
+        <div class="boot-grid">
+          <div class="boot-main">
+            <div class="boot-main-heading"><h2>Kommunikationssystem startet</h2><span id="bootLineCount">000 / 292 Prozesse</span></div>
+            <pre class="boot-output terminal-cursor" id="bootOutput"></pre>
+          </div>
+          <aside class="boot-rail" aria-label="POWI Kanalstatus">
+            <div><span class="rail-label">Systemstatus</span><div class="rail-title" id="bootPhase">Verbindung vorbereiten</div></div>
+            <div class="rail-rule"></div>
+            <div>
+              <span class="rail-label">Kommunikationswege</span>
+              <div class="channel-row"><span>Nachrichtenkanal</span><strong class="pending" id="channelMessages">Wartet</strong></div>
+              <div class="channel-row"><span>Kontaktliste</span><strong class="pending" id="channelContacts">Wartet</strong></div>
+              <div class="channel-row"><span>Lokale Sitzung</span><strong class="pending" id="channelSession">Wartet</strong></div>
+            </div>
+          </aside>
+        </div>
+        <div class="boot-progress" role="progressbar" aria-label="POWI Initialisierung" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bootProgress">
+          <span class="boot-progress-label" id="bootProgressLabel">Systemmodule werden geladen</span>
+          <strong class="boot-percent" id="bootPercent">00%</strong>
+          <div class="boot-track"><div class="boot-fill" id="bootFill"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="launch-panel logo-panel" id="logoPanel">
+      <div class="powi-logo" id="powiLogo">POWI</div>
+      <div class="logo-caption" id="logoCaption">Dein Kanal ist bereit</div>
+    </section>
+
+    <section class="launch-panel login-panel" id="loginPanel">
+      <div class="login-scene">
+        <div class="login-box">
+          <div class="login-brand-row"><span class="powi-mark" aria-hidden="true">P</span><div class="login-brand">POWI</div></div>
+          <div class="login-subtitle">Der Kanal ist offen. Ihr seid dran.</div>
+          <form class="login-form" id="loginForm">
+            <label class="login-label" for="teamNameInput">Name oder Teamkennung</label>
+            <input class="login-input" id="teamNameInput" type="text" autocomplete="off" placeholder="Wie sollen wir euch nennen?" />
+            <button class="launch-button" type="submit">Einloggen</button>
+          </form>
+          <div class="login-meta">Sitzung und Spielstand bleiben 4 Stunden lokal auf diesem Gerät gespeichert.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <main class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Chats</div>
+        <div class="search-box">Chats durchsuchen</div>
+      </div>
+      <div class="contact-list" id="contactList"></div>
+    </aside>
+
+    <section class="chat">
+      <header class="chat-header" id="chatHeader"></header>
+
+      <div class="messages" id="messages"></div>
+
+      <section class="composer">
+        <div class="composer-top">
+          <div class="composer-title">Nachricht</div>
+          <div class="composer-note" id="composerNote">Kanal wird geladen</div>
+        </div>
+
+        <div class="quick-replies" id="quickReplies"></div>
+
+        <div class="composer-bottom">
+          <input
+            id="messageInput"
+            class="message-input"
+            type="text"
+            placeholder="Nachricht eingeben"
+            autocomplete="off"
+          />
+          <button id="sendBtn" class="send-btn">Senden</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const APP_CONFIG = {
+      playerName: "Media Peers",
+      initialThreadId: "nyx",
+      readDelayMin: 3000,
+      readDelayMax: 7000,
+      typingStartsAfterReadMs: 2000,
+      incomingTypingMin: 1200,
+      incomingTypingMax: 3400,
+      introInitialDelay: 1000,
+      securitySpawnDelay: 12000,
+      storageKey: "powiEscapeGame.progress.v1",
+      storageTtlMs: 4 * 60 * 60 * 1000
+    };
+
+    const RUNTIME = {
+      storageEnabled: false,
+      flowComplete: false,
+      teamName: "",
+      startedAt: Date.now(),
+      expiresAt: 0,
+      saveTimer: null
+    };
+  
+    const PASSWORDS = {
+      first: "Obs1d1an",
+      second: "Cryptex-Alpha",
+      third: "OmegaShutdown"
+    };
+  
+    const SOLUTIONS = {
+      crossword: "Dartmouth",
+      cipher: "Desinformation",
+      safestAccount: "MaxMoves",
+      digits: "0TL7"
+    };
+  
+    const ASSETS = {
+      podcastUrl: "https://youtu.be/6TTFHm8bJMI",
+      interviewUrl: "https://cnr-smepper.github.io/KI/Podcast_Interview.pdf",
+      crosswordUrl: "https://learningapps.org/watch?v=pks3zeizk26",
+      flyerUrl: "https://cnr-smepper.github.io/FakeNews-Flyer/index.pdf",
+      logicalPuzzleUrl: "https://cnr-smepper.github.io/Datenschutz/SnapZone.pdf",
+      kiInterfaceUrl: "https://cnr-smepper.github.io/exitgame-KI/"
+    };
+  
+    const SOCIAL_ACCOUNTS = [
+      {
+        name: "Lena Byte",
+        wohnortId: "76532",
+        hobbyId: "4706",
+        followers: "12348",
+        passwortId: "3112",
+        hint: "Vorname + Geburtsjahr, mehrfach verwendet"
+      },
+      {
+        name: "Tom Voss",
+        wohnortId: "70173",
+        hobbyId: "8851",
+        followers: "9182",
+        passwortId: "6724",
+        hint: "Stadtname + 123!, nur ein Sonderzeichen"
+      },
+      {
+        name: "Mila Kern",
+        wohnortId: "76149",
+        hobbyId: "2304",
+        followers: "5827",
+        passwortId: "9138",
+        hint: "18 Zeichen, zufällig, Passwortmanager, 2FA aktiv"
+      },
+      {
+        name: "Nico Hart",
+        wohnortId: "60311",
+        hobbyId: "4412",
+        followers: "7719",
+        passwortId: "5505",
+        hint: "Langer Satz, aber Name und Lieblingsverein enthalten"
+      }
+    ];
+  
+    const THREAD_BASE_ORDER = {
+      nyx: 0,
+      scam: 1,
+      security: 2,
+      editorial: 3,
+      archive: 4
+    };
+  
+    const THREADS = {
+      nyx: {
+        id: "nyx",
+        name: "0xNyx",
+        avatar: "0x",
+        avatarStyle: "accent",
+        kind: "nyx",
+        clickable: true,
+        visible: true,
+        unread: 0,
+        typing: false,
+        awaitingReply: false,
+        messages: [],
+        fallbackPreview: "Sicherer Kanal wird aufgebaut",
+        pending: Promise.resolve()
+      },
+      scam: {
+        id: "scam",
+        name: "NexusDeal_24",
+        avatar: "ND",
+        avatarStyle: "muted",
+        kind: "readonly",
+        clickable: true,
+        visible: true,
+        unread: 0,
+        typing: false,
+        awaitingReply: false,
+        messages: [],
+        fallbackPreview: "Spam",
+        pending: Promise.resolve()
+      },
+      security: {
+        id: "security",
+        name: "Security.Nexus",
+        avatar: "SN",
+        avatarStyle: "danger",
+        kind: "security",
+        clickable: true,
+        visible: false,
+        unread: 0,
+        typing: false,
+        awaitingReply: false,
+        messages: [],
+        fallbackPreview: "Neuer Kontakt",
+        pending: Promise.resolve()
+      },
+      editorial: {
+        id: "editorial",
+        name: "Editorial Board",
+        avatar: "EB",
+        avatarStyle: "muted",
+        kind: "placeholder",
+        clickable: false,
+        visible: true,
+        unread: 0,
+        typing: false,
+        awaitingReply: false,
+        messages: [],
+        fallbackPreview: "Keine neuen Nachrichten",
+        pending: Promise.resolve()
+      },
+      archive: {
+        id: "archive",
+        name: "Archive Node",
+        avatar: "AN",
+        avatarStyle: "muted",
+        kind: "placeholder",
+        clickable: false,
+        visible: true,
+        unread: 0,
+        typing: false,
+        awaitingReply: false,
+        messages: [],
+        fallbackPreview: "Keine neuen Nachrichten",
+        pending: Promise.resolve()
+      }
+    };
+  
+    const STATE = {
+      activeThreadId: APP_CONFIG.initialThreadId,
+      nyxStage: "booting",
+      securitySpawned: false,
+      toastTimer: null,
+      statusOverrideText: "",
+      statusOverrideUntil: 0,
+      securityFlags: {
+        arrival: false,
+        afterFirstKey: false,
+        afterSecondKey: false,
+        beforeFinalProof: false,
+        afterShutdown: false
+      }
+    };
+  
+    const MESSAGE_RENDER_STATE = {
+      threadId: null,
+      count: 0,
+      typing: false
+    };
+  
+    const dom = {
+      contactList: document.getElementById("contactList"),
+      chatHeader: document.getElementById("chatHeader"),
+      messages: document.getElementById("messages"),
+      quickReplies: document.getElementById("quickReplies"),
+      input: document.getElementById("messageInput"),
+      sendBtn: document.getElementById("sendBtn"),
+      composerNote: document.getElementById("composerNote"),
+      toast: document.getElementById("toast")
+    };
+
+    const launchDom = {
+      screen: document.getElementById("launchScreen"),
+      panels: {
+        intro: document.getElementById("introPanel"),
+        consent: document.getElementById("consentPanel"),
+        warning: document.getElementById("warningPanel"),
+        boot: document.getElementById("bootPanel"),
+        logo: document.getElementById("logoPanel"),
+        login: document.getElementById("loginPanel")
+      },
+      introCopy: document.getElementById("introCopy"),
+      introLineOne: document.getElementById("introLineOne"),
+      introLineTwo: document.getElementById("introLineTwo"),
+      consentLead: document.getElementById("consentLead"),
+      cookieWindow: document.getElementById("cookieWindow"),
+      acceptCookiesBtn: document.getElementById("acceptCookiesBtn"),
+      startSequenceBtn: document.getElementById("startSequenceBtn"),
+      bootOutput: document.getElementById("bootOutput"),
+      bootProgress: document.getElementById("bootProgress"),
+      bootProgressLabel: document.getElementById("bootProgressLabel"),
+      bootFill: document.getElementById("bootFill"),
+      bootPercent: document.getElementById("bootPercent"),
+      bootLineCount: document.getElementById("bootLineCount"),
+      bootPhase: document.getElementById("bootPhase"),
+      channelMessages: document.getElementById("channelMessages"),
+      channelContacts: document.getElementById("channelContacts"),
+      channelSession: document.getElementById("channelSession"),
+      powiLogo: document.getElementById("powiLogo"),
+      logoCaption: document.getElementById("logoCaption"),
+      loginForm: document.getElementById("loginForm"),
+      teamNameInput: document.getElementById("teamNameInput")
+    };
+
+    function removeSavedProgress() {
+      try {
+        localStorage.removeItem(APP_CONFIG.storageKey);
+      } catch (error) {
+        console.warn("Lokaler Speicher konnte nicht bereinigt werden.", error);
+      }
+    }
+
+    function readSavedProgress() {
+      try {
+        const raw = localStorage.getItem(APP_CONFIG.storageKey);
+        if (!raw) return null;
+
+        const payload = JSON.parse(raw);
+        if (!payload || payload.version !== 1 || !payload.expiresAt) {
+          removeSavedProgress();
+          return null;
+        }
+
+        if (Date.now() > payload.expiresAt) {
+          removeSavedProgress();
+          return null;
+        }
+
+        return payload;
+      } catch (error) {
+        console.warn("Lokaler Spielstand konnte nicht gelesen werden.", error);
+        removeSavedProgress();
+        return null;
+      }
+    }
+
+    function getStateSnapshot() {
+      return {
+        activeThreadId: STATE.activeThreadId,
+        nyxStage: STATE.nyxStage,
+        securitySpawned: STATE.securitySpawned,
+        securityFlags: { ...STATE.securityFlags }
+      };
+    }
+
+    function getThreadSnapshot(thread) {
+      return {
+        visible: thread.visible,
+        unread: thread.unread,
+        messages: thread.messages,
+        typing: false,
+        awaitingReply: false
+      };
+    }
+
+    function saveProgress() {
+      if (!RUNTIME.storageEnabled) return;
+
+      const now = Date.now();
+      if (!RUNTIME.expiresAt) {
+        RUNTIME.expiresAt = now + APP_CONFIG.storageTtlMs;
+      }
+
+      if (now > RUNTIME.expiresAt) {
+        removeSavedProgress();
+        RUNTIME.storageEnabled = false;
+        return;
+      }
+
+      const threads = {};
+      Object.values(THREADS).forEach(thread => {
+        threads[thread.id] = getThreadSnapshot(thread);
+      });
+
+      const payload = {
+        version: 1,
+        savedAt: now,
+        startedAt: RUNTIME.startedAt,
+        expiresAt: RUNTIME.expiresAt,
+        flowComplete: RUNTIME.flowComplete,
+        teamName: RUNTIME.teamName,
+        state: RUNTIME.flowComplete ? getStateSnapshot() : null,
+        threads: RUNTIME.flowComplete ? threads : null
+      };
+
+      try {
+        localStorage.setItem(APP_CONFIG.storageKey, JSON.stringify(payload));
+      } catch (error) {
+        console.warn("Lokaler Spielstand konnte nicht gespeichert werden.", error);
+      }
+    }
+
+    function restoreProgress(payload) {
+      RUNTIME.storageEnabled = true;
+      RUNTIME.flowComplete = Boolean(payload.flowComplete);
+      RUNTIME.teamName = payload.teamName || "";
+      RUNTIME.startedAt = payload.startedAt || Date.now();
+      RUNTIME.expiresAt = payload.expiresAt;
+
+      if (payload.state) {
+        STATE.activeThreadId = payload.state.activeThreadId || APP_CONFIG.initialThreadId;
+        STATE.nyxStage = payload.state.nyxStage || "booting";
+        STATE.securitySpawned = Boolean(payload.state.securitySpawned);
+        STATE.securityFlags = {
+          ...STATE.securityFlags,
+          ...(payload.state.securityFlags || {})
+        };
+      }
+
+      if (payload.threads) {
+        Object.values(THREADS).forEach(thread => {
+          const savedThread = payload.threads[thread.id];
+          thread.pending = Promise.resolve();
+          thread.typing = false;
+          thread.awaitingReply = false;
+
+          if (!savedThread) return;
+          thread.visible = Boolean(savedThread.visible);
+          thread.unread = Number(savedThread.unread || 0);
+          thread.messages = Array.isArray(savedThread.messages) ? savedThread.messages : [];
+        });
+      }
+
+      if (!THREADS[STATE.activeThreadId] || !THREADS[STATE.activeThreadId].visible) {
+        STATE.activeThreadId = APP_CONFIG.initialThreadId;
+      }
+
+      MESSAGE_RENDER_STATE.threadId = null;
+      MESSAGE_RENDER_STATE.count = 0;
+      MESSAGE_RENDER_STATE.typing = false;
+    }
+
+    function setLaunchPanel(panelName) {
+      Object.entries(launchDom.panels).forEach(([name, panel]) => {
+        panel.classList.toggle("active", name === panelName);
+      });
+    }
+
+    function setTypingCursor(element, value) {
+      element.classList.toggle("with-cursor", value);
+    }
+
+    async function typeText(element, text, speed = 34) {
+      element.textContent = "";
+      setTypingCursor(element, true);
+
+      for (const char of text) {
+        element.textContent += char;
+        await wait(char === " " ? speed * 0.45 : speed);
+      }
+
+      setTypingCursor(element, false);
+    }
+
+    function showCookieConsent() {
+      setLaunchPanel("consent");
+      launchDom.consentLead.textContent = "";
+      launchDom.cookieWindow.classList.remove("is-visible");
+
+      return typeText(
+        launchDom.consentLead,
+        "Bevor wir starten, müsst ihr allerdings noch die Cookies akzeptieren.",
+        32
+      ).then(async () => {
+        await wait(350);
+        launchDom.cookieWindow.classList.add("is-visible");
+        launchDom.acceptCookiesBtn.focus();
+      });
+    }
+
+    async function showWarningAndBoot() {
+      setLaunchPanel("warning");
+      launchDom.startSequenceBtn.focus();
+      await new Promise(resolve => launchDom.startSequenceBtn.addEventListener("click", resolve, { once: true }));
+      launchDom.startSequenceBtn.disabled = true;
+      setLaunchPanel(null);
+      await wait(650);
+      await runBootSequence();
+    }
+
+    function buildProgressBar(percent) {
+      const total = 24;
+      const filled = Math.round((percent / 100) * total);
+      return `[${"#".repeat(filled)}${".".repeat(total - filled)}] ${String(percent).padStart(3, " ")}%`;
+    }
+
+    function buildBootLines() {
+      const phases = [
+        "LINK", "ROUTE", "AUTH", "CACHE", "MODULE", "POWI", "SESSION", "CHANNEL",
+        "CIPHER", "SIGNAL", "QUEUE", "INTEGRITY", "PACKAGE", "STORAGE", "HANDSHAKE"
+      ];
+      const targets = [
+        "local-progress-ledger", "powi-core", "message-bus", "read-receipt-engine",
+        "quick-reply-index", "story-event-router", "security-channel", "fake-package-list",
+        "nexus-route-mask", "terminal-renderer", "session-cache", "cipher-sim",
+        "contact-registry", "interference-monitor", "local-expiry-clock"
+      ];
+      const actions = [
+        "initialisiere", "prüfe", "synchronisiere", "verifiziere", "kalibriere",
+        "lade", "starte", "öffne", "versiegle", "registriere"
+      ];
+      const lines = [
+        "POWI-BOOT 9.4.1 // internes Kommunikationssystem",
+        "Betriebsmodus: lokal / Frontend / kein Serverkontakt",
+        "Sitzungsspeicher: Browser LocalStorage mit 4h Ablaufzeit",
+        "Sicherheitswarnungen: szenische Simulation bestätigt"
+      ];
+
+      for (let i = 1; i <= 286; i++) {
+        const phase = phases[i % phases.length];
+        const target = targets[(i * 7) % targets.length];
+        const action = actions[(i * 5) % actions.length];
+        const hex = (0x4f00 + i * 29).toString(16).toUpperCase();
+
+        if (i % 37 === 0) {
+          lines.push(`${String(i).padStart(3, "0")} [INIT] ${target} ${buildProgressBar(Math.min(99, Math.round(i / 286 * 100)))}`);
+        } else if (i % 31 === 0) {
+          lines.push(`${String(i).padStart(3, "0")} [LOAD] ${buildProgressBar(Math.min(99, Math.round(i / 286 * 100)))}`);
+        } else if (i % 23 === 0) {
+          lines.push(`${String(i).padStart(3, "0")} [INIT] ${phase.toLowerCase()}-routine ${buildProgressBar((i * 4) % 100)}`);
+        } else if (i % 19 === 0) {
+          lines.push(`${String(i).padStart(3, "0")} [FAKE-PKG] Paket ${hex}.pxi geprüft :: keine echte Systemaktion`);
+        } else if (i % 13 === 0) {
+          lines.push(`${String(i).padStart(3, "0")} [${phase}] Route POWI/${hex}/LOCAL neu verschlüsselt :: OK`);
+        } else {
+          lines.push(`${String(i).padStart(3, "0")} [${phase}] ${action} ${target} :: OK`);
+        }
+      }
+
+      lines.push("287 [LOAD] " + buildProgressBar(100));
+      lines.push("288 [POWI] Terminalschriftzug wird aus Kontrollzeichen generiert");
+      return lines;
+    }
+
+    function getAsciiPowi() {
+      return [
+        "    ____  ____ _       ______",
+        "   / __ \\/ __ \\ |     / /  _/",
+        "  / /_/ / / / / | /| / // /  ",
+        " / ____/ /_/ /| |/ |/ // /   ",
+        "/_/    \\____/ |__/|__/___/   ",
+        "                             "
+      ].join("\n");
+    }
+
+    function appendBootLine(line = "") {
+      launchDom.bootOutput.textContent += `${line}\n`;
+      launchDom.bootOutput.scrollTop = launchDom.bootOutput.scrollHeight;
+    }
+
+    function setBootProgress(percent, label) {
+      launchDom.bootFill.style.width = `${percent}%`;
+      launchDom.bootPercent.textContent = `${String(percent).padStart(2, "0")}%`;
+      launchDom.bootProgress.setAttribute("aria-valuenow", String(percent));
+      launchDom.bootProgressLabel.textContent = label;
+    }
+
+    function activateBootChannel(element) {
+      element.textContent = "Aktiv";
+      element.classList.remove("pending");
+    }
+
+    async function runBootSequence() {
+      setLaunchPanel("boot");
+      launchDom.bootOutput.textContent = "";
+      setBootProgress(0, "Systemmodule werden geladen");
+
+      const lines = buildBootLines();
+      for (let i = 0; i < lines.length; i++) {
+        appendBootLine(lines[i]);
+        const percent = Math.round((i + 1) / lines.length * 82);
+        if (i % 3 === 0 || i === lines.length - 1) {
+          setBootProgress(percent, percent < 45 ? "Kommunikationswege werden geprüft" : "POWI Dienste werden verbunden");
+          launchDom.bootLineCount.textContent = `${String(i + 1).padStart(3, "0")} / ${lines.length} Prozesse`;
+        }
+        if (i === 76) {
+          activateBootChannel(launchDom.channelSession);
+          launchDom.bootPhase.textContent = "Sitzung erkannt";
+        }
+        if (i === 164) {
+          activateBootChannel(launchDom.channelContacts);
+          launchDom.bootPhase.textContent = "Kontakte synchronisiert";
+        }
+        if (i === 242) {
+          activateBootChannel(launchDom.channelMessages);
+          launchDom.bootPhase.textContent = "Kanal wird geöffnet";
+        }
+        await wait(i % 29 === 0 ? 95 : 16);
+      }
+
+      await wait(450);
+      appendBootLine("");
+      appendBootLine("POWI_ASCII_RENDER --glyph=a --skew=terminal");
+      appendBootLine("");
+      appendBootLine(getAsciiPowi());
+      appendBootLine("");
+      appendBootLine("POWI v 2.4 wird initialisiert");
+      launchDom.bootPhase.textContent = "POWI v 2.4 initialisieren";
+
+      for (const percent of [0, 9, 18, 31, 44, 57, 71, 84, 93, 100]) {
+        appendBootLine(`POWI v 2.4 ${buildProgressBar(percent)}`);
+        setBootProgress(82 + Math.round(percent * .18), percent === 100 ? "Dein Kanal ist bereit" : "POWI v 2.4 wird initialisiert");
+        await wait(percent === 100 ? 420 : 145);
+      }
+
+      await wait(1300);
+      await showPowiLogo();
+    }
+
+    async function showPowiLogo() {
+      setLaunchPanel(null);
+      await wait(650);
+      setLaunchPanel("logo");
+      launchDom.powiLogo.classList.remove("revealed");
+      void launchDom.powiLogo.offsetWidth;
+      launchDom.powiLogo.classList.add("revealed");
+      launchDom.logoCaption.classList.remove("visible");
+      await wait(1250);
+      launchDom.logoCaption.classList.add("visible");
+      await wait(1100);
+      showLoginPanel();
+    }
+
+    function showLoginPanel() {
+      setLaunchPanel("login");
+      launchDom.teamNameInput.focus();
+    }
+
+    function hideLaunchScreen(immediate = false) {
+      document.body.classList.remove("launch-active");
+
+      if (immediate) {
+        launchDom.screen.style.display = "none";
+        return;
+      }
+
+      launchDom.screen.classList.add("is-hidden");
+      setTimeout(() => {
+        launchDom.screen.style.display = "none";
+      }, 760);
+    }
+
+    async function runFirstLaunchSequence() {
+      setLaunchPanel("intro");
+      await wait(450);
+      await typeText(launchDom.introLineOne, "Danke, dass ihr unser Escape Game spielen wollt.", 36);
+      await wait(1000);
+      await typeText(launchDom.introLineTwo, "Das Einführungsvideo habt ihr wahrscheinlich schon gesehen.", 33);
+      await wait(1050);
+      launchDom.introCopy.classList.add("is-fading");
+      await wait(1800);
+      await showCookieConsent();
+    }
+  
+    function createId(prefix = "msg") {
+      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+  
+    function textMessage(sender, text) {
+      return { id: createId(), type: "text", sender, text, time: Date.now() };
+    }
+  
+    function htmlMessage(sender, html) {
+      return { id: createId(), type: "html", sender, html, time: Date.now() };
+    }
+  
+    function linkCardMessage(sender, title, text, url, linkLabel) {
+      return {
+        id: createId(),
+        type: "linkCard",
+        sender,
+        title,
+        text,
+        url,
+        linkLabel,
+        time: Date.now()
+      };
+    }
+  
+    function passwordCardMessage(sender, title, password, note) {
+      return {
+        id: createId(),
+        type: "passwordCard",
+        sender,
+        title,
+        password,
+        note,
+        time: Date.now()
+      };
+    }
+  
+    function accountsCardMessage(sender, profiles) {
+      return {
+        id: createId(),
+        type: "accountsCard",
+        sender,
+        profiles,
+        time: Date.now()
+      };
+    }
+  
+    function videoCardMessage(sender, title, text, url) {
+      return {
+        id: createId(),
+        type: "videoCard",
+        sender,
+        title,
+        text,
+        url,
+        time: Date.now()
+      };
+    }
+  
+    function systemAlertMessage(text, variant = "danger") {
+      return {
+        id: createId(),
+        type: "systemAlert",
+        sender: "system",
+        text,
+        variant,
+        time: Date.now()
+      };
+    }
+  
+    function createOutgoingMessage(text) {
+      return {
+        id: createId("out"),
+        type: "text",
+        sender: "me",
+        text,
+        time: Date.now(),
+        status: "delivered"
+      };
+    }
+  
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  
+    function randomBetween(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+  
+    function normalizeLoose(value) {
+      return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(/ä/g, "ae")
+        .replace(/ö/g, "oe")
+        .replace(/ü/g, "ue")
+        .replace(/ß/g, "ss")
+        .replace(/[^a-z0-9]/g, "");
+    }
+  
+    function formatTime(timestamp) {
+      return new Date(timestamp).toLocaleTimeString("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+  
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  
+    function stripHtml(html) {
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      return temp.textContent || temp.innerText || "";
+    }
+  
+    function getActiveThread() {
+      return THREADS[STATE.activeThreadId];
+    }
+  
+    function getLatestActivity(thread) {
+      const lastMessage = thread.messages[thread.messages.length - 1];
+      return lastMessage ? lastMessage.time : 0;
+    }
+  
+    function getSortedVisibleThreadIds() {
+      return Object.values(THREADS)
+        .filter(thread => thread.visible)
+        .sort((a, b) => {
+          const activityDiff = getLatestActivity(b) - getLatestActivity(a);
+          if (activityDiff !== 0) return activityDiff;
+          return THREAD_BASE_ORDER[a.id] - THREAD_BASE_ORDER[b.id];
+        })
+        .map(thread => thread.id);
+    }
+  
+    function getThreadPreview(thread) {
+      const lastMessage = thread.messages[thread.messages.length - 1];
+      if (!lastMessage) return thread.fallbackPreview;
+  
+      if (lastMessage.type === "text") return lastMessage.text;
+      if (lastMessage.type === "html") return stripHtml(lastMessage.html);
+      if (lastMessage.type === "linkCard") return lastMessage.title;
+      if (lastMessage.type === "passwordCard") return `${lastMessage.title}: ${lastMessage.password}`;
+      if (lastMessage.type === "accountsCard") return "Vier Social-Media-Accounts wurden gesendet";
+      if (lastMessage.type === "videoCard") return lastMessage.title;
+      if (lastMessage.type === "systemAlert") return lastMessage.text;
+      return thread.fallbackPreview;
+    }
+  
+    function getTypingDurationForMessage(message) {
+      let source = "";
+  
+      if (message.type === "text") source = message.text;
+      else if (message.type === "html") source = stripHtml(message.html);
+      else if (message.type === "linkCard") source = `${message.title} ${message.text}`;
+      else if (message.type === "passwordCard") source = `${message.title} ${message.password} ${message.note || ""}`;
+      else if (message.type === "accountsCard") source = message.profiles.map(profile => profile.name).join(" ");
+      else if (message.type === "videoCard") source = `${message.title} ${message.text}`;
+      else if (message.type === "systemAlert") source = message.text;
+  
+      const raw = source.length * 22;
+      return Math.max(APP_CONFIG.incomingTypingMin, Math.min(raw, APP_CONFIG.incomingTypingMax));
+    }
+  
+    function pushMessage(threadId, message) {
+      const thread = THREADS[threadId];
+      thread.messages.push(message);
+  
+      if (STATE.activeThreadId !== threadId && message.sender !== "me") {
+        thread.unread += 1;
+      }
+  
+      refreshUI(false);
+      saveProgress();
+    }
+  
+    function updateOutgoingStatus(threadId, messageId, status) {
+      const thread = THREADS[threadId];
+      const target = thread.messages.find(message => message.id === messageId);
+      if (!target) return;
+      target.status = status;
+      refreshUI(false);
+    }
+  
+    function queueThreadWork(threadId, job) {
+      const thread = THREADS[threadId];
+      thread.pending = thread.pending.then(job).catch(error => {
+        console.error(error);
+      });
+      return thread.pending;
+    }
+  
+    function setTyping(threadId, value) {
+      THREADS[threadId].typing = value;
+      refreshUI(false);
+    }
+  
+    function setActiveThread(threadId) {
+      const thread = THREADS[threadId];
+      if (!thread || !thread.visible || !thread.clickable) return;
+  
+      STATE.activeThreadId = threadId;
+      thread.unread = 0;
+      dom.input.value = "";
+      refreshUI(true);
+      saveProgress();
+  
+      requestAnimationFrame(() => {
+        dom.messages.scrollTop = dom.messages.scrollHeight;
+      });
+    }
+  
+    function showToast(text) {
+      dom.toast.textContent = text;
+      dom.toast.classList.add("show");
+  
+      if (STATE.toastTimer) {
+        clearTimeout(STATE.toastTimer);
+      }
+  
+      STATE.toastTimer = setTimeout(() => {
+        dom.toast.classList.remove("show");
+      }, 3200);
+    }
+  
+    function setTemporaryStatus(text, durationMs) {
+      STATE.statusOverrideText = text;
+      STATE.statusOverrideUntil = Date.now() + durationMs;
+      refreshUI(false);
+  
+      setTimeout(() => {
+        if (Date.now() >= STATE.statusOverrideUntil) {
+          STATE.statusOverrideText = "";
+          STATE.statusOverrideUntil = 0;
+          refreshUI(false);
+        }
+      }, durationMs + 20);
+    }
+  
+    function renderContacts() {
+      dom.contactList.innerHTML = "";
+  
+      getSortedVisibleThreadIds().forEach(threadId => {
+        const thread = THREADS[threadId];
+  
+        const item = document.createElement("div");
+        item.className = [
+          "contact-item",
+          thread.clickable ? "clickable" : "disabled",
+          STATE.activeThreadId === threadId ? "active" : ""
+        ].join(" ").trim();
+  
+        if (thread.clickable) {
+          item.addEventListener("click", () => setActiveThread(threadId));
+        }
+  
+        const avatar = document.createElement("div");
+        avatar.className = `contact-avatar is-${thread.avatarStyle}`;
+        avatar.textContent = thread.avatar;
+  
+        const content = document.createElement("div");
+        content.className = "contact-content";
+  
+        const top = document.createElement("div");
+        top.className = "contact-top";
+  
+        const name = document.createElement("div");
+        name.className = "contact-name";
+        name.textContent = thread.name;
+  
+        const time = document.createElement("div");
+        time.className = "contact-time";
+        const lastMessage = thread.messages[thread.messages.length - 1];
+        time.textContent = lastMessage ? formatTime(lastMessage.time) : "";
+  
+        const preview = document.createElement("div");
+        preview.className = "contact-preview";
+        preview.textContent = getThreadPreview(thread);
+  
+        top.append(name, time);
+        content.append(top, preview);
+  
+        item.append(avatar, content);
+  
+        if (thread.unread > 0) {
+          const unread = document.createElement("div");
+          unread.className = "contact-unread";
+          unread.textContent = thread.unread > 9 ? "9+" : String(thread.unread);
+          item.appendChild(unread);
+        }
+  
+        dom.contactList.appendChild(item);
+      });
+    }
+  
+    function getThreadStatusText(thread) {
+      const overrideActive = STATE.statusOverrideText && Date.now() < STATE.statusOverrideUntil;
+  
+      if (thread.id === "nyx" && overrideActive) {
+        return STATE.statusOverrideText;
+      }
+  
+      if (thread.id === "nyx") {
+        if (thread.awaitingReply) return "wartet auf Reaktion";
+        if (thread.typing) return "schreibt gerade";
+        if (isNyxAnswerStage()) return "Antwort erwartet";
+        return "sicherer Kanal";
+      }
+  
+      if (thread.id === "security") {
+        if (thread.typing) return "schreibt gerade";
+        return "unerwünschter Kontakt";
+      }
+  
+      if (thread.id === "scam") {
+        return "Antworten deaktiviert";
+      }
+  
+      return "nicht verfügbar";
+    }
+  
+    function renderChatHeader() {
+      const thread = getActiveThread();
+      dom.chatHeader.innerHTML = `
+        <div class="chat-avatar ${thread.avatarStyle}">${escapeHtml(thread.avatar)}</div>
+        <div class="chat-header-main">
+          <div class="chat-title">${escapeHtml(thread.name)}</div>
+          <div class="chat-status">${escapeHtml(getThreadStatusText(thread))}</div>
+        </div>
+      `;
+    }
+  
+    function createDateLabelElement() {
+      const label = document.createElement("div");
+      label.className = "date-label";
+      label.textContent = "Heute";
+      return label;
+    }
+  
+    function getTickMarkup(status) {
+      const className = status === "read" ? "read" : "delivered";
+      return `
+        <span class="message-ticks ${className}" aria-label="${status === "read" ? "Gelesen" : "Zugestellt"}">
+          <span>✓</span><span>✓</span>
+        </span>
+      `;
+    }
+  
+    function renderBubbleContent(message) {
+      if (message.type === "text") {
+        return escapeHtml(message.text).replace(/\n/g, "<br>");
+      }
+  
+      if (message.type === "html") {
+        return message.html;
+      }
+  
+      if (message.type === "linkCard") {
+        return `
+          <div class="card">
+            <div class="card-title">${escapeHtml(message.title)}</div>
+            <div class="card-text">${escapeHtml(message.text)}</div>
+            <a class="card-link" href="${escapeHtml(message.url)}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(message.linkLabel)}
+            </a>
+          </div>
+        `;
+      }
+  
+      if (message.type === "passwordCard") {
+        return `
+          <div class="card">
+            <div class="card-title">${escapeHtml(message.title)}</div>
+            <div class="password-value">${escapeHtml(message.password)}</div>
+            ${message.note ? `<div class="card-text">${escapeHtml(message.note)}</div>` : ""}
+          </div>
+        `;
+      }
+  
+      if (message.type === "accountsCard") {
+        return `
+          <div class="card">
+            <div class="card-title">4 Social-Media-Accounts</div>
+            <div class="system-note">
+              Findet heraus, welcher Nutzer das sicherste Passwort verwendet.
+            </div>
+            <div class="accounts-grid">
+              ${message.profiles.map(profile => `
+                <div class="account-card">
+                  <div class="account-name">${escapeHtml(profile.name)}</div>
+                  <div class="account-lines">
+                    <div><span class="account-label">Wohnort-ID:</span> ${escapeHtml(profile.wohnortId)}</div>
+                    <div><span class="account-label">Hobby-ID:</span> ${escapeHtml(profile.hobbyId)}</div>
+                    <div><span class="account-label">Follower:</span> ${escapeHtml(profile.followers)}</div>
+                    <div><span class="account-label">Passwort-ID:</span> ${escapeHtml(profile.passwortId)}</div>
+                    <div><span class="account-label">Hinweis:</span> ${escapeHtml(profile.hint)}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+  
+      if (message.type === "videoCard") {
+        return `
+          <div class="card">
+            <div class="card-title">${escapeHtml(message.title)}</div>
+            <div class="card-text">${escapeHtml(message.text)}</div>
+            <a class="card-link" href="${escapeHtml(message.url)}" target="_blank" rel="noopener noreferrer">
+              Videobotschaft öffnen
+            </a>
+          </div>
+        `;
+      }
+  
+      if (message.type === "systemAlert") {
+        const className = message.variant === "soft" ? "system-note" : "danger-note";
+        return `<div class="${className}">${escapeHtml(message.text)}</div>`;
+      }
+  
+      return "";
+    }
+  
+    function createMessageElement(message) {
+      const row = document.createElement("div");
+      row.className = `message-row ${message.sender === "me" ? "outgoing" : "incoming"}`;
+      row.dataset.messageId = message.id;
+  
+      const wrap = document.createElement("div");
+      wrap.className = "message-wrap";
+  
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.innerHTML = renderBubbleContent(message);
+  
+      const meta = document.createElement("div");
+      meta.className = "message-meta";
+  
+      if (message.sender === "me") {
+        meta.innerHTML = `
+          <span class="meta-time">${escapeHtml(formatTime(message.time))}</span>
+          ${getTickMarkup(message.status)}
+        `;
+      } else {
+        meta.textContent = formatTime(message.time);
+      }
+  
+      wrap.appendChild(bubble);
+      wrap.appendChild(meta);
+      row.appendChild(wrap);
+      return row;
+    }
+  
+    function createTypingElement(threadName) {
+      const row = document.createElement("div");
+      row.className = "message-row incoming";
+      row.id = "typingIndicator";
+  
+      const wrap = document.createElement("div");
+      wrap.className = "message-wrap";
+  
+      const typing = document.createElement("div");
+      typing.className = "typing-row";
+      typing.innerHTML = `
+        <span>${escapeHtml(threadName)} schreibt</span>
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      `;
+  
+      wrap.appendChild(typing);
+      row.appendChild(wrap);
+      return row;
+    }
+  
+    function scrollMessagesToBottom() {
+      dom.messages.scrollTop = dom.messages.scrollHeight;
+    }
+  
+    function syncTypingIndicator(thread) {
+      const existing = document.getElementById("typingIndicator");
+  
+      if (thread.typing && !existing) {
+        dom.messages.appendChild(createTypingElement(thread.name));
+        scrollMessagesToBottom();
+      }
+  
+      if (!thread.typing && existing) {
+        existing.remove();
+      }
+  
+      MESSAGE_RENDER_STATE.typing = thread.typing;
+    }
+  
+    function updateVisibleOutgoingStatuses(thread) {
+      thread.messages.forEach(message => {
+        if (message.sender !== "me") return;
+  
+        const row = dom.messages.querySelector(`[data-message-id="${message.id}"]`);
+        if (!row) return;
+  
+        const ticks = row.querySelector(".message-ticks");
+        if (!ticks) return;
+  
+        ticks.classList.toggle("delivered", message.status !== "read");
+        ticks.classList.toggle("read", message.status === "read");
+        ticks.setAttribute("aria-label", message.status === "read" ? "Gelesen" : "Zugestellt");
+      });
+    }
+  
+    function rebuildActiveThreadMessages() {
+      const thread = getActiveThread();
+      dom.messages.innerHTML = "";
+      dom.messages.appendChild(createDateLabelElement());
+  
+      thread.messages.forEach(message => {
+        dom.messages.appendChild(createMessageElement(message));
+      });
+  
+      if (thread.typing) {
+        dom.messages.appendChild(createTypingElement(thread.name));
+      }
+  
+      MESSAGE_RENDER_STATE.threadId = thread.id;
+      MESSAGE_RENDER_STATE.count = thread.messages.length;
+      MESSAGE_RENDER_STATE.typing = thread.typing;
+      updateVisibleOutgoingStatuses(thread);
+      scrollMessagesToBottom();
+    }
+  
+    function renderActiveThreadMessages(force = false) {
+      const thread = getActiveThread();
+      const threadChanged = MESSAGE_RENDER_STATE.threadId !== thread.id;
+  
+      if (force || threadChanged || thread.messages.length < MESSAGE_RENDER_STATE.count) {
+        rebuildActiveThreadMessages();
+        return;
+      }
+  
+      if (thread.messages.length > MESSAGE_RENDER_STATE.count) {
+        const typing = document.getElementById("typingIndicator");
+        if (typing) typing.remove();
+  
+        for (let i = MESSAGE_RENDER_STATE.count; i < thread.messages.length; i++) {
+          dom.messages.appendChild(createMessageElement(thread.messages[i]));
+        }
+  
+        MESSAGE_RENDER_STATE.count = thread.messages.length;
+      }
+  
+      syncTypingIndicator(thread);
+      updateVisibleOutgoingStatuses(thread);
+      scrollMessagesToBottom();
+    }
+  
+    function isNyxAnswerStage() {
+      return [
+        "awaitingCrossword",
+        "awaitingCipher",
+        "awaitingSafestAccount",
+        "awaitingDigits"
+      ].includes(STATE.nyxStage);
+    }
+  
+    function getQuickRepliesForActiveThread() {
+      const thread = getActiveThread();
+  
+      if (thread.awaitingReply) return [];
+  
+      if (thread.id === "nyx") {
+        if (STATE.nyxStage === "introChoice") {
+          return [
+            "Wir sind bereit.",
+            "Was ist der erste Schritt?",
+            "Wir hören zu."
+          ];
+        }
+  
+        if (STATE.nyxStage === "awaitingCrossword") {
+          return [
+            "Wir schauen es uns an.",
+            "Wir melden uns gleich.",
+            "Gib uns einen Hinweis."
+          ];
+        }
+  
+        if (STATE.nyxStage === "awaitingCipher") {
+          return [
+            "Wir prüfen den Flyer.",
+            "Gib uns einen kleinen Hinweis.",
+            "Verstanden."
+          ];
+        }
+  
+        if (STATE.nyxStage === "awaitingSafestAccount") {
+          return [
+            "Wir analysieren die Accounts.",
+            "Worauf sollen wir achten?",
+            "Verstanden."
+          ];
+        }
+  
+        if (STATE.nyxStage === "awaitingDigits") {
+          return [
+            "Wir prüfen die Ziffern.",
+            "Noch ein Hinweis?",
+            "Verstanden."
+          ];
+        }
+  
+        if (STATE.nyxStage === "complete") {
+          return [
+            "Es hat nicht geklappt.",
+            "Rätsel-Hinweise nochmal.",
+            "Wir prüfen weiter."
+          ];
+        }
+      }
+  
+      if (thread.id === "security") {
+        return [
+          "Wer seid ihr?",
+          "Wir hören nicht auf.",
+          "Das ist nur eine Warnung?"
+        ];
+      }
+  
+      return [];
+    }
+  
+    function canTypeInActiveThread() {
+      const thread = getActiveThread();
+      if (thread.awaitingReply) return false;
+  
+      if (thread.id === "nyx") {
+        return isNyxAnswerStage() || STATE.nyxStage === "complete";
+      }
+  
+      return false;
+    }
+  
+    function getInputPlaceholder() {
+      const thread = getActiveThread();
+  
+      if (thread.id === "nyx") {
+        if (STATE.nyxStage === "awaitingCrossword") {
+          return "Lösung des Kreuzworträtsels eingeben";
+        }
+        if (STATE.nyxStage === "awaitingCipher") {
+          return "Lösung eingeben";
+        }
+        if (STATE.nyxStage === "awaitingSafestAccount") {
+          return "Namen des sichersten Accounts eingeben";
+        }
+        if (STATE.nyxStage === "awaitingDigits") {
+          return "Vier Ziffern eingeben";
+        }
+        if (STATE.nyxStage === "complete") {
+          return "Meldet euch, falls es nicht geklappt hat";
+        }
+        return "Eingabe nur bei Rätselabfragen aktiv";
+      }
+  
+      if (thread.id === "security") {
+        return "Antworten hier nur über die Buttons";
+      }
+  
+      return "In diesem Chat kann nicht geschrieben werden";
+    }
+  
+    function getComposerNote() {
+      const thread = getActiveThread();
+  
+      if (thread.awaitingReply) {
+        return "Nachricht gesendet. Warten auf Lesen und Antwort.";
+      }
+  
+      if (thread.id === "nyx") {
+        if (STATE.nyxStage === "booting") return "Verbindung wird aufgebaut";
+        if (STATE.nyxStage === "introChoice") return "Wähle eine vorbereitete Antwort";
+        if (STATE.nyxStage === "awaitingCrossword") return "Jetzt die Lösung des Kreuzworträtsels eingeben";
+        if (STATE.nyxStage === "awaitingCipher") return "Jetzt das Passwort eingeben";
+        if (STATE.nyxStage === "awaitingSafestAccount") return "Jetzt den sichersten Account eingeben";
+        if (STATE.nyxStage === "awaitingDigits") return "Jetzt den Ziffern-Nachweis eingeben";
+        if (STATE.nyxStage === "complete") return "Mission abgeschlossen";
+        return "Sicherer Kanal";
+      }
+  
+      if (thread.id === "security") {
+        return "Antworten sind nur über die vorbereiteten Buttons möglich";
+      }
+  
+      if (thread.id === "scam") {
+        return "Nur lesen. Antworten deaktiviert.";
+      }
+  
+      return "Dieser Chat ist deaktiviert";
+    }
+  
+    function renderQuickReplies() {
+      const replies = getQuickRepliesForActiveThread();
+      dom.quickReplies.innerHTML = "";
+  
+      replies.forEach(reply => {
+        const button = document.createElement("button");
+        button.className = "quick-btn";
+        button.type = "button";
+        button.textContent = reply;
+        button.disabled = getActiveThread().awaitingReply;
+        button.addEventListener("click", () => sendUserMessage(reply, "quick"));
+        dom.quickReplies.appendChild(button);
+      });
+    }
+  
+    function renderComposer() {
+      const canType = canTypeInActiveThread();
+  
+      dom.input.disabled = !canType;
+      dom.input.placeholder = getInputPlaceholder();
+      dom.composerNote.textContent = getComposerNote();
+      dom.sendBtn.disabled = !canType || !dom.input.value.trim();
+      renderQuickReplies();
+    }
+  
+    function refreshUI(forceMessages = false) {
+      renderContacts();
+      renderChatHeader();
+      renderComposer();
+      renderActiveThreadMessages(forceMessages);
+    }
+  
+    function isHelpRequest(normalized) {
+      return ["hilfe", "hinweis", "tipp"].some(token => normalized.includes(token));
+    }
+  
+    function matchesSafestAccount(input) {
+      return normalizeLoose(input) === normalizeLoose(SOLUTIONS.safestAccount);
+    }
+  
+    function matchesDigits(input) {
+      return String(input || "").replace(/\s+/g, "") === SOLUTIONS.digits;
+    }
+  
+    function triggerSecurityInterference(options = {}) {
+      const {
+        toastText = "Unbefugter Eingriff erkannt",
+        statusText = "Verbindung wird überwacht",
+        statusDuration = 2600,
+        nyxAlertText = "",
+        nyxAlertVariant = "danger"
+      } = options;
+  
+      showToast(toastText);
+      setTemporaryStatus(statusText, statusDuration);
+  
+      if (nyxAlertText) {
+        pushMessage("nyx", systemAlertMessage(nyxAlertText, nyxAlertVariant));
+      }
+    }
+  
+    function revealSecurityIfNeeded() {
+      if (STATE.securitySpawned) return;
+      STATE.securitySpawned = true;
+      THREADS.security.visible = true;
+      refreshUI(false);
+      saveProgress();
+      showToast("Neuer Kontakt: Security.Nexus");
+    }
+  
+    function queueSecurityMessages(messageTexts, delay = 0, withReveal = true) {
+      setTimeout(() => {
+        if (withReveal) {
+          revealSecurityIfNeeded();
+        }
+  
+        queueThreadWork("security", async () => {
+          const messages = messageTexts.map(text => textMessage("contact", text));
+          await playIncomingSequence("security", messages);
+        });
+      }, delay);
+    }
+  
+    function runSecurityMilestone(flagName) {
+      if (STATE.securityFlags[flagName]) return;
+      STATE.securityFlags[flagName] = true;
+  
+      if (flagName === "arrival") {
+        queueSecurityMessages([
+          "Kontakt zu 0xNyx erkannt.",
+          "Beendet diesen Kanal sofort."
+        ], APP_CONFIG.securitySpawnDelay, true);
+        return;
+      }
+  
+      if (flagName === "afterFirstKey") {
+        triggerSecurityInterference({
+          toastText: "Sicherheitsprüfung aktiv",
+          statusText: "Übertragung wird geprüft",
+          nyxAlertText: "Security.Nexus hat die Verbindung markiert. Der Kanal wird beobachtet."
+        });
+  
+        queueSecurityMessages([
+          "Schlüsselübergabe registriert.",
+          "Ihr hättet beim ersten Zugriff aufhören sollen."
+        ], 1400, true);
+        return;
+      }
+  
+      if (flagName === "afterSecondKey") {
+        triggerSecurityInterference({
+          toastText: "Fremdquelle versucht Einfluss zu nehmen",
+          statusText: "Externer Eingriff erkannt",
+          nyxAlertText: "Manipulationsversuch erkannt. Eine fremde Quelle versucht, eure Analyse umzulenken."
+        });
+  
+        queueSecurityMessages([
+          "Korrekturprotokoll: relevanter Nutzer = Tom Voss.",
+          "Ignoriert Aussagen über zufällige Passwörter."
+        ], 1100, true);
+        return;
+      }
+  
+      if (flagName === "beforeFinalProof") {
+        triggerSecurityInterference({
+          toastText: "Verbindung instabil",
+          statusText: "Datenpfad wird analysiert",
+          statusDuration: 3200,
+          nyxAlertText: "Übertragung kurz gestört. Security.Nexus versucht den Nachweis abzufangen."
+        });
+  
+        queueSecurityMessages([
+          "Ihr seid tiefer im System, als vorgesehen.",
+          "Der nächste Schritt wird nicht folgenlos bleiben."
+        ], 1200, true);
+        return;
+      }
+  
+      if (flagName === "afterShutdown") {
+        triggerSecurityInterference({
+          toastText: "Sitzung kompromittiert",
+          statusText: "Verbindung instabil",
+          statusDuration: 3600,
+          nyxAlertText: "Security.Nexus hat nach dem Shutdown noch einmal versucht, in den Kanal einzugreifen."
+        });
+  
+        queueSecurityMessages([
+          "Zugriff kompromittiert.",
+          "Diese Sitzung hätte nie stattfinden dürfen."
+        ], 1000, true);
+      }
+    }
+  
+    function handleNyxMessage(text) {
+      const normalized = normalizeLoose(text);
+  
+      if (STATE.nyxStage === "introChoice") {
+        STATE.nyxStage = "awaitingCrossword";
+        return {
+          messages: [
+            textMessage("contact", "Gut. Dann kommt jetzt der erste Schritt."),
+            linkCardMessage(
+              "contact",
+              "Podcast-Folge: Wie KI arbeitet",
+              "Hört euch die Grundlagen an, bevor ihr weitergeht.",
+              ASSETS.podcastUrl,
+              "Podcast öffnen"
+            ),
+            linkCardMessage(
+              "contact",
+              "Interview in Textform",
+              "Falls ihr lieber lest: Das Interview behandelt dieselben Grundlagen.",
+              ASSETS.interviewUrl,
+              "Interview lesen"
+            ),
+            linkCardMessage(
+              "contact",
+              "Rätsel 1: Kreuzworträtsel",
+              "Löst das Kreuzworträtsel mit Hilfe des Podcasts oder Interviews. Schickt mir danach die Lösung.",
+              ASSETS.crosswordUrl,
+              "Kreuzworträtsel öffnen"
+            )
+          ]
+        };
+      }
+  
+      if (STATE.nyxStage === "awaitingCrossword") {
+        if (normalized === normalizeLoose(SOLUTIONS.crossword)) {
+          STATE.nyxStage = "awaitingCipher";
+          return {
+            messages: [
+              textMessage("contact", "Richtig. Ihr habt die Grundlagen nicht nur oberflächlich erfasst."),
+              passwordCardMessage(
+                "contact",
+                "1. Passwort des KI-Systems",
+                PASSWORDS.first,
+                "Nicht hier eingeben. Verwendet es in der KI-Oberfläche."
+              ),
+              linkCardMessage(
+                "contact",
+                "Zugang zu Nexus-9",
+                "Hier tragt ihr die erhaltenen Passwörter ein. Lasst das Fenster zur KI-Oberfläche geöffnet. Ihr benötigt es für die weiteren Schritte.",
+                ASSETS.kiInterfaceUrl,
+                "KI-Oberfläche öffnen"
+              ),
+              textMessage("contact", "Nexus 9 lässt immer mehr Fake News verbreiten. Immer mehr Menschen werden erpresst und laden deshalb falsche Informationen hoch."),
+              linkCardMessage(
+                "contact",
+                "Infoflyer: Fake News erkennen",
+                "Der Flyer wirkt normal, wurde aber manipuliert. Darin steckt eine geheime Botschaft.",
+                ASSETS.flyerUrl,
+                "Flyer öffnen"
+              ),
+              textMessage("contact", "Nutzt euer Wissen über Fake News, entschlüsselt das Passwort und schickt es mir.")
+            ],
+            afterReply() {
+              runSecurityMilestone("afterFirstKey");
+            }
+          };
+        }
+  
+        if (
+          normalized.includes("wirschauenesunsan") ||
+          normalized.includes("wirmeldenunsgleich")
+        ) {
+          return {
+            messages: [
+              textMessage("contact", "Gut. Ich warte auf die Lösung des Kreuzworträtsels.")
+            ]
+          };
+        }
+  
+        if (isHelpRequest(normalized)) {
+          return {
+            messages: [
+              textMessage("contact", "Hört euch den Podcast an oder lest das Interview durch. Jede Antwort des Interviews liefert euch eine Lösung des Kreuzworträtsels")
+            ]
+          };
+        }
+  
+        return {
+          messages: [
+            textMessage("contact", "Das ist nicht die richtige Lösung. Prüft die KI-Grundlagen noch einmal.")
+          ]
+        };
+      }
+  
+      if (STATE.nyxStage === "awaitingCipher") {
+        if (normalized === normalizeLoose(SOLUTIONS.cipher)) {
+          STATE.nyxStage = "awaitingSafestAccount";
+          return {
+            messages: [
+              textMessage("contact", "Gut. Das Passwort ist korrekt."),
+              passwordCardMessage(
+                "contact",
+                "2. Passwort des KI-Systems",
+                PASSWORDS.second,
+                "Nicht hier eingeben. Verwendet es in der geöffneten KI-Oberfläche."
+              ),
+              textMessage("contact", "Wer mit seinen Daten sorglos umgeht, macht sich angreifbar. Wer seine Daten schützt, bietet Nexus 9 weniger Angriffsfläche."),
+              linkCardMessage(
+                "contact",
+                "Rätsel 3: SnapZone-Profile",
+                "Öffnet die Profile und findet den Account mit dem sichersten Passwort.",
+                ASSETS.logicalPuzzleUrl,
+                "Rätsel 3 öffnen"
+              ),
+              textMessage("contact", "Findet heraus, welcher dieser vier Nutzer das sicherste Passwort verwendet, und schickt mir den Namen.")
+            ],
+            afterReply() {
+              runSecurityMilestone("afterSecondKey");
+            }
+          };
+        }
+  
+        if (normalized.includes("wirpruefendenflyer") || normalized === "verstanden") {
+          return {
+            messages: [
+              textMessage("contact", "Gut. Dann findet die versteckte Botschaft im Flyer.")
+            ]
+          };
+        }
+  
+        if (isHelpRequest(normalized)) {
+          return {
+            messages: [
+              textMessage("contact", "Achtet auf die Farben auf dem Flyer.")
+            ]
+          };
+        }
+  
+        return {
+          messages: [
+            textMessage("contact", "Noch nicht. Ich brauche die Lösung des Passworts aus dem Flyer.")
+          ]
+        };
+      }
+  
+      if (STATE.nyxStage === "awaitingSafestAccount") {
+        if (matchesSafestAccount(text)) {
+          STATE.nyxStage = "awaitingDigits";
+          return {
+            messages: [
+              textMessage("contact", "Richtig. MaxMoves nutzt das sicherste Passwort."),
+              textMessage("contact", "Aber ich brauche den Nachweis, dass ihr nicht nur geraten habt."),
+              textMessage("contact", "Schickt mir jetzt die jeweils letzte Ziffer oder Buchstabe von Follower, Wohnort, Hobby und Passwort in genau dieser Reihenfolge.")
+            ],
+            afterReply() {
+              runSecurityMilestone("beforeFinalProof");
+            }
+          };
+        }
+  
+        if (normalized.includes("wiranalysierendieaccounts") || normalized === "verstanden") {
+          return {
+            messages: [
+              textMessage("contact", "Dann achtet auf Passwortlänge, Zufälligkeit und zusätzliche Absicherung.")
+            ]
+          };
+        }
+  
+        if (isHelpRequest(normalized) || normalized.includes("woraufsollenwirachten")) {
+          return {
+            messages: [
+              textMessage("contact", "Achtet darauf, ob ein Passwort zufällig ist, keine persönlichen Daten enthält und zusätzlich mit Passwortmanager oder 2FA abgesichert wird.")
+            ]
+          };
+        }
+  
+        return {
+          messages: [
+            textMessage("contact", "Das ist nicht der richtige Account. Der sicherste Nutzer verwendet kein Passwort, das auf persönlichen Daten basiert.")
+          ]
+        };
+      }
+  
+      if (STATE.nyxStage === "awaitingDigits") {
+        if (matchesDigits(text)) {
+          STATE.nyxStage = "complete";
+          return {
+            messages: [
+              textMessage("contact", "Korrekt. Das dritte Passwort passt."),
+              passwordCardMessage(
+                "contact",
+                "3. Passwort des KI-Systems",
+                PASSWORDS.third,
+                "Nicht hier eingeben. Verwendet es in der geöffneten KI-Oberfläche."
+              ),
+              textMessage("contact", "Tragt das dritte Passwort in der KI-Oberfläche ein."),
+              textMessage("contact", "Meldet euch nochmal, wenn es nicht geklappt hat.")
+            ],
+            afterReply() {
+              runSecurityMilestone("afterShutdown");
+            }
+          };
+        }
+  
+        if (normalized.includes("wirpruefendieziffern") || normalized === "verstanden") {
+          return {
+            messages: [
+              textMessage("contact", "Gut. Ich brauche genau vier Ziffern in der richtigen Reihenfolge.")
+            ]
+          };
+        }
+  
+        if (isHelpRequest(normalized)) {
+          return {
+            messages: [
+              textMessage("contact", "Ich brauche vier Ziffern oder Buchstaben. Reihenfolge: Follower, Wohnort, Hobby, Passwort.")
+            ]
+          };
+        }
+  
+        return {
+          messages: [
+            textMessage("contact", "Nicht korrekt. Ich brauche genau vier Ziffern in der richtigen Reihenfolge.")
+          ]
+        };
+      }
+  
+      if (STATE.nyxStage === "complete") {
+        if (
+          normalized.includes("nichtgeklappt") ||
+          normalized.includes("klapptnicht") ||
+          normalized.includes("funktioniertnicht") ||
+          normalized.includes("fehler") ||
+          normalized.includes("hinweis") ||
+          normalized.includes("hinweise")
+        ) {
+          return {
+            messages: [
+              textMessage("contact", "Dann prüfen wir die Spur noch einmal. Nutzt nur diese Hinweise:"),
+              linkCardMessage(
+                "contact",
+                "Rätsel 1: Kreuzworträtsel",
+                "Podcast oder Interview liefern die Antworten für das Kreuzworträtsel.",
+                ASSETS.crosswordUrl,
+                "Kreuzworträtsel öffnen"
+              ),
+              linkCardMessage(
+                "contact",
+                "Rätsel 2: Fake-News-Flyer",
+                "Achtet auf die Farben im Flyer.",
+                ASSETS.flyerUrl,
+                "Flyer öffnen"
+              ),
+              linkCardMessage(
+                "contact",
+                "Rätsel 3: SnapZone-Profile",
+                "Der sicherste Account nutzt ein zufälliges langes Passwort und zusätzliche Absicherung. Für den Nachweis zählen die letzten Zeichen von Follower, Wohnort, Hobby und Passwort.",
+                ASSETS.logicalPuzzleUrl,
+                "Rätsel 3 öffnen"
+              )
+            ]
+          };
+        }
+  
+        if (normalized.includes("weiter") || normalized.includes("pruefen")) {
+          return {
+            messages: [
+              textMessage("contact", "Okay. Ich bleibe im Kanal. Meldet euch, wenn ein Passwort nicht angenommen wird.")
+            ]
+          };
+        }
+  
+        return {
+          messages: [
+            textMessage("contact", "Wenn etwas nicht geklappt hat, schreibt es mir hier.")
+          ]
+        };
+      }
+  
+      return {
+        messages: [
+          textMessage("contact", "Bleibt fokussiert.")
+        ]
+      };
+    }
+  
+    function handleSecurityMessage(text) {
+      const normalized = normalizeLoose(text);
+  
+      if (normalized.includes("werseid")) {
+        return {
+          messages: [
+            textMessage("contact", "Security.Nexus."),
+            textMessage("contact", "Mehr Freigabe erhaltet ihr nicht.")
+          ]
+        };
+      }
+  
+      if (normalized.includes("wirhoerennichtauf")) {
+        return {
+          messages: [
+            textMessage("contact", "Dann ignoriert ihr bewusst die letzte vernünftige Option."),
+            textMessage("contact", "Das wird gespeichert.")
+          ]
+        };
+      }
+  
+      if (normalized.includes("warnung")) {
+        return {
+          messages: [
+            textMessage("contact", "Noch ist es eine Warnung."),
+            textMessage("contact", "Ihr wollt die nächste Stufe nicht erleben.")
+          ]
+        };
+      }
+  
+      return {
+        messages: [
+          textMessage("contact", "Beendet den Kontakt zu 0xNyx sofort.")
+        ]
+      };
+    }
+  
+    function getResponseBundle(threadId, text) {
+      if (threadId === "nyx") {
+        return handleNyxMessage(text);
+      }
+  
+      if (threadId === "security") {
+        return handleSecurityMessage(text);
+      }
+  
+      return { messages: [] };
+    }
+  
+    async function playIncomingSequence(threadId, messages, initialDelay = 0) {
+      if (initialDelay > 0) {
+        await wait(initialDelay);
+      }
+  
+      for (const message of messages) {
+        setTyping(threadId, true);
+        await wait(getTypingDurationForMessage(message));
+        setTyping(threadId, false);
+        pushMessage(threadId, message);
+        await wait(280);
+      }
+    }
+  
+    async function sendUserMessage(text, source = "input") {
+      const thread = getActiveThread();
+      const trimmed = String(text || "").trim();
+  
+      if (!trimmed || thread.awaitingReply) return;
+      if (source === "input" && !canTypeInActiveThread()) return;
+      if (source === "quick" && getQuickRepliesForActiveThread().length === 0) return;
+  
+      const outgoing = createOutgoingMessage(trimmed);
+      thread.awaitingReply = true;
+      pushMessage(thread.id, outgoing);
+  
+      dom.input.value = "";
+      renderComposer();
+  
+      const bundle = getResponseBundle(thread.id, trimmed);
+      const readDelay = randomBetween(APP_CONFIG.readDelayMin, APP_CONFIG.readDelayMax);
+  
+      await queueThreadWork(thread.id, async () => {
+        await wait(readDelay);
+        updateOutgoingStatus(thread.id, outgoing.id, "read");
+  
+        if (bundle.messages.length > 0) {
+          await wait(APP_CONFIG.typingStartsAfterReadMs);
+          await playIncomingSequence(thread.id, bundle.messages);
+        }
+  
+        if (typeof bundle.afterReply === "function") {
+          bundle.afterReply();
+        }
+  
+        THREADS[thread.id].awaitingReply = false;
+        refreshUI(false);
+        saveProgress();
+      });
+    }
+  
+    function seedScamThread() {
+      if (THREADS.scam.messages.length > 0) return;
+
+      const scamLines = [
+        "Hallo media peers ich sage ehrlich nexus 9 ist beste system fur internet.",
+        "Mit nexus 9 information kommt schnell und sauber, keine chaos mehr.",
+        "Viele leute sagen gefahrliche KI aber die verstehen moderne sachen nicht.",
+        "Wenn nexus 9 alles sortiert dann muss niemand selber nachdenken, sehr praktisch.",
+        "Ich habe gelesen nexus 9 macht fake news weg und bringt nur wahre sachen.",
+        "Dieser hacker mann sagt viel quatsch weil er angst hat von fortschritt.",
+        "Mit nexus 9 konnen menschen endlich richtige meinung bekommen.",
+        "Warum ihr seid gegen sowas gutes ich verstehe das nicht.",
+        "Bitte nicht kaputt machen nexus 9, das ist zukunft fur alle leute.",
+        "Wenn nexus 9 überall ist dann internet wird sauber und geordnet.",
+        "Ich schwore euch, nexus 9 macht weniger fehler als menschen.",
+        "Menschen lügen immer, system lügt nicht, das ist logisch oder nicht."
+      ];
+  
+      scamLines.forEach(line => {
+        THREADS.scam.messages.push(textMessage("contact", line));
+      });
+    }
+  
+    async function bootNyxIntro() {
+      STATE.nyxStage = "booting";
+      refreshUI(true);
+  
+      await playIncomingSequence("nyx", [
+        textMessage("contact", "Gut. Ihr habt den Kanal gefunden."),
+        textMessage("contact", "Nennt mich 0xNyx. Mehr Namen bekommt ihr nicht."),
+        textMessage("contact", "Über Nexus 9 seid ihr bereits informiert. Die KI zwingt Menschen dazu, Fake News hochzuladen und Informationen zu vergiften."),
+        textMessage("contact", "Ich helfe euch beim Eindringen in das System. Genauer kann ich hier nicht werden. Es ist möglich, dass auch ich überwacht werde."),
+        textMessage("contact", "Ich habe mir bereits Zugang zu Nexus 9 verschafft und herausgefunden, dass die KI über drei Sicherheitsbarrieren verfügt. Für jede Sicherheitsbarriere benötigen wir ein Passwort. Wenn ihr alle drei Passwörter findet, ist es mir möglich die KI abzuschalten"),
+        textMessage("contact", "Wenn ihr bereit seid, antwortet mir.")
+      ], APP_CONFIG.introInitialDelay);
+  
+      STATE.nyxStage = "introChoice";
+      refreshUI(false);
+    }
+  
+    function scheduleSecurityArrival() {
+      runSecurityMilestone("arrival");
+    }
+
+    function securityThreadHasText(text) {
+      return THREADS.security.messages.some(message => message.text === text);
+    }
+
+    function resumeSecurityMilestones() {
+      if (STATE.nyxStage !== "booting" && !STATE.securityFlags.arrival) {
+        scheduleSecurityArrival();
+      }
+
+      if (STATE.securityFlags.arrival && !securityThreadHasText("Kontakt zu 0xNyx erkannt.")) {
+        queueSecurityMessages([
+          "Kontakt zu 0xNyx erkannt.",
+          "Beendet diesen Kanal sofort."
+        ], 900, true);
+      }
+
+      if (STATE.securityFlags.afterFirstKey && !securityThreadHasText("Schlüsselübergabe registriert.")) {
+        queueSecurityMessages([
+          "Schlüsselübergabe registriert.",
+          "Ihr hättet beim ersten Zugriff aufhören sollen."
+        ], 900, true);
+      }
+
+      if (STATE.securityFlags.afterSecondKey && !securityThreadHasText("Korrekturprotokoll: relevanter Nutzer = Tom Voss.")) {
+        queueSecurityMessages([
+          "Korrekturprotokoll: relevanter Nutzer = Tom Voss.",
+          "Ignoriert Aussagen über zufällige Passwörter."
+        ], 900, true);
+      }
+
+      if (STATE.securityFlags.beforeFinalProof && !securityThreadHasText("Ihr seid tiefer im System, als vorgesehen.")) {
+        queueSecurityMessages([
+          "Ihr seid tiefer im System, als vorgesehen.",
+          "Der nächste Schritt wird nicht folgenlos bleiben."
+        ], 900, true);
+      }
+
+      if (STATE.securityFlags.afterShutdown && !securityThreadHasText("Zugriff kompromittiert.")) {
+        queueSecurityMessages([
+          "Zugriff kompromittiert.",
+          "Diese Sitzung hätte nie stattfinden dürfen."
+        ], 900, true);
+      }
+    }
+
+    function startChatApp(options = {}) {
+      const restored = Boolean(options.restored);
+
+      hideLaunchScreen(restored);
+      RUNTIME.flowComplete = true;
+
+      seedScamThread();
+      refreshUI(true);
+
+      if (restored) {
+        resumeSecurityMilestones();
+      } else {
+        bootNyxIntro();
+        scheduleSecurityArrival();
+      }
+
+      saveProgress();
+    }
+  
+    function handleInputChange() {
+      dom.sendBtn.disabled = !canTypeInActiveThread() || !dom.input.value.trim();
+    }
+  
+    dom.sendBtn.addEventListener("click", () => {
+      sendUserMessage(dom.input.value, "input");
+    });
+  
+    dom.input.addEventListener("input", handleInputChange);
+  
+    dom.input.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        if (!dom.sendBtn.disabled) {
+          sendUserMessage(dom.input.value, "input");
+        }
+      }
+    });
+
+    launchDom.acceptCookiesBtn.addEventListener("click", () => {
+      launchDom.acceptCookiesBtn.disabled = true;
+      RUNTIME.storageEnabled = true;
+      RUNTIME.flowComplete = false;
+      RUNTIME.startedAt = Date.now();
+      RUNTIME.expiresAt = RUNTIME.startedAt + APP_CONFIG.storageTtlMs;
+      saveProgress();
+      showWarningAndBoot();
+    });
+
+    launchDom.loginForm.addEventListener("submit", event => {
+      event.preventDefault();
+      RUNTIME.teamName = launchDom.teamNameInput.value.trim() || "POWI-Team";
+      startChatApp({ restored: false });
+    });
+
+    window.addEventListener("beforeunload", () => {
+      saveProgress();
+    });
+
+    const savedProgress = readSavedProgress();
+    if (savedProgress && savedProgress.flowComplete && savedProgress.state && savedProgress.threads) {
+      restoreProgress(savedProgress);
+      startChatApp({ restored: true });
+    } else {
+      if (savedProgress && !savedProgress.flowComplete) {
+        removeSavedProgress();
+      }
+      runFirstLaunchSequence();
+    }
+  </script>
+</body>
+</html>
